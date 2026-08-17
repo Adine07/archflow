@@ -8,9 +8,14 @@ export default function TopBar() {
   const addNewEnum = useDiagramStore(state => state.addNewEnum);
   const exportProject = useDiagramStore(state => state.exportProject);
   const importProject = useDiagramStore(state => state.importProject);
+  const importDBMLFile = useDiagramStore(state => state.importDBMLFile);
+  const importSQLFile = useDiagramStore(state => state.importSQLFile);
   const exportSQL = useDiagramStore(state => state.exportSQL);
+  const exportDBML = useDiagramStore(state => state.exportDBML);
 
   const fileInputRef = useRef(null);
+  const dbmlInputRef = useRef(null);
+  const sqlInputRef = useRef(null);
   
   // Dropdown states
   const [fileMenuOpen, setFileMenuOpen] = useState(false);
@@ -58,7 +63,30 @@ export default function TopBar() {
       importProject(event.target.result);
     };
     reader.readAsText(file);
-    // reset input
+    e.target.value = '';
+    setFileMenuOpen(false);
+  };
+
+  const handleDbmlImport = (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = (event) => {
+      importDBMLFile(event.target.result);
+    };
+    reader.readAsText(file);
+    e.target.value = '';
+    setFileMenuOpen(false);
+  };
+
+  const handleSqlImport = (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = (event) => {
+      importSQLFile(event.target.result);
+    };
+    reader.readAsText(file);
     e.target.value = '';
     setFileMenuOpen(false);
   };
@@ -88,9 +116,13 @@ export default function TopBar() {
               <div className="absolute top-full mt-1 left-0 w-36 bg-slate-800 border border-slate-700 rounded shadow-xl overflow-hidden flex flex-col z-[100]">
                 <button onClick={() => { exportProject(); setFileMenuOpen(false); }} className="px-4 py-2 text-left text-xs text-slate-200 hover:bg-slate-700">Save Project</button>
                 <button onClick={() => { fileInputRef.current.click(); }} className="px-4 py-2 text-left text-xs text-slate-200 hover:bg-slate-700">Open Project</button>
+                <button onClick={() => { dbmlInputRef.current.click(); }} className="px-4 py-2 text-left text-xs text-slate-200 hover:bg-slate-700 border-t border-slate-700">Import DBML</button>
+                <button onClick={() => { sqlInputRef.current.click(); }} className="px-4 py-2 text-left text-xs text-slate-200 hover:bg-slate-700">Import SQL</button>
               </div>
             )}
             <input type="file" accept=".dbmlproj" className="hidden" ref={fileInputRef} onChange={handleFileChange} />
+            <input type="file" accept=".dbml" className="hidden" ref={dbmlInputRef} onChange={handleDbmlImport} />
+            <input type="file" accept=".sql" className="hidden" ref={sqlInputRef} onChange={handleSqlImport} />
           </div>
 
           {/* EXPORT GROUP */}
@@ -106,6 +138,7 @@ export default function TopBar() {
                 <button onClick={() => { handleDownloadImage('png'); setExportMenuOpen(false); }} className="px-4 py-2 text-left text-xs text-slate-200 hover:bg-slate-700">Export PNG</button>
                 <button onClick={() => { handleDownloadImage('svg'); setExportMenuOpen(false); }} className="px-4 py-2 text-left text-xs text-slate-200 hover:bg-slate-700">Export SVG</button>
                 <button onClick={() => { exportSQL(); setExportMenuOpen(false); }} className="px-4 py-2 text-left text-xs text-slate-200 hover:bg-slate-700">Export SQL (MySQL)</button>
+                <button onClick={() => { exportDBML(); setExportMenuOpen(false); }} className="px-4 py-2 text-left text-xs text-slate-200 hover:bg-slate-700 border-t border-slate-700">Export DBML (.dbml)</button>
               </div>
             )}
           </div>

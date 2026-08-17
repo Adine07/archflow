@@ -1,6 +1,6 @@
 import { create } from 'zustand';
 import { applyNodeChanges, applyEdgeChanges } from '@xyflow/react';
-import { Parser, exporter } from '@dbml/core';
+import { Parser, exporter, importer } from '@dbml/core';
 import React from 'react';
 import { getLayoutedElements } from './layoutUtils.js';
 
@@ -103,6 +103,30 @@ export const useDiagramStore = create((set, get) => ({
     }
   },
 
+  importDBMLFile: (fileContent) => {
+    try {
+      get().setDbmlString(fileContent);
+      // Wait for React Flow state to settle then auto layout
+      setTimeout(() => {
+        get().applyAutoLayout();
+      }, 50);
+    } catch (err) {
+      alert("Failed to import DBML: " + err.message);
+    }
+  },
+
+  importSQLFile: (fileContent) => {
+    try {
+      const dbmlString = importer.import(fileContent, 'mysql');
+      get().setDbmlString(dbmlString);
+      setTimeout(() => {
+        get().applyAutoLayout();
+      }, 50);
+    } catch (err) {
+      alert("Failed to import SQL: " + err.message);
+    }
+  },
+
   exportSQL: () => {
     try {
       const { dbmlString } = get();
@@ -116,6 +140,21 @@ export const useDiagramStore = create((set, get) => ({
       URL.revokeObjectURL(url);
     } catch (err) {
       alert("Failed to export SQL: " + err.message);
+    }
+  },
+
+  exportDBML: () => {
+    try {
+      const { dbmlString } = get();
+      const blob = new Blob([dbmlString], { type: 'text/plain' });
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.download = 'schema.dbml';
+      link.href = url;
+      link.click();
+      URL.revokeObjectURL(url);
+    } catch (err) {
+      alert("Failed to export DBML: " + err.message);
     }
   },
 
