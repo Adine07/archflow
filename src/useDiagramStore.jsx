@@ -22,6 +22,11 @@ Ref: posts.user_id > users.id
 `;
 
 export const useDiagramStore = create((set, get) => ({
+  fileMenuOpen: false,
+  exportMenuOpen: false,
+  setFileMenuOpen: (isOpen) => set({ fileMenuOpen: isOpen }),
+  setExportMenuOpen: (isOpen) => set({ exportMenuOpen: isOpen }),
+  closeAllMenus: () => set({ fileMenuOpen: false, exportMenuOpen: false }),
   dbmlString: defaultDbmlString,
   nodes: [],
   edges: [],
@@ -29,6 +34,47 @@ export const useDiagramStore = create((set, get) => ({
   errorLocation: null,
   parsedEnums: [],
   activeEnumModal: null,
+
+  appMode: 'erd',
+  setAppMode: (mode) => set({ appMode: mode }),
+
+  flowNodes: [],
+  flowEdges: [],
+
+  onFlowNodesChange: (changes) => {
+    set({ flowNodes: applyNodeChanges(changes, get().flowNodes) });
+  },
+
+  onFlowEdgesChange: (changes) => {
+    set({ flowEdges: applyEdgeChanges(changes, get().flowEdges) });
+  },
+
+  onFlowConnect: (connection) => {
+    import('@xyflow/react').then(({ addEdge }) => {
+      set({ flowEdges: addEdge(connection, get().flowEdges) });
+    });
+  },
+
+  addFlowNode: (type, position) => {
+    const newNode = {
+      id: `flow-node-${Date.now()}`,
+      type,
+      position,
+      data: { label: 'New Node' },
+    };
+    set({ flowNodes: [...get().flowNodes, newNode] });
+  },
+
+  updateFlowNodeLabel: (id, newLabel) => {
+    set({
+      flowNodes: get().flowNodes.map(node => {
+        if (node.id === id) {
+          return { ...node, data: { ...node.data, label: newLabel } };
+        }
+        return node;
+      })
+    });
+  },
 
   openEnumModal: (enumName) => set({ activeEnumModal: enumName }),
   closeEnumModal: () => set({ activeEnumModal: null }),

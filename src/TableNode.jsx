@@ -69,9 +69,9 @@ export default function TableNode({ data }) {
     setEditingType(null);
   };
   return (
-    <div className="min-w-[200px] w-max rounded-md border border-slate-700 bg-slate-800 text-slate-100 shadow-lg">
+    <div className="min-w-[200px] w-max rounded-md border border-[#383838] bg-[#202020] text-[#e5e7eb] shadow-lg">
       
-      <div className="bg-slate-900 px-4 py-2 text-center text-sm font-bold rounded-t-md border-b border-slate-700">
+      <div className="bg-[#1a1a1a] px-4 py-2 text-center text-sm font-bold rounded-t-md border-b border-[#383838]">
         {isEditingTable ? (
           <input
             autoFocus
@@ -83,7 +83,7 @@ export default function TableNode({ data }) {
               if (e.key === 'Enter') handleTableSave();
               if (e.key === 'Escape') setIsEditingTable(false);
             }}
-            className="bg-slate-700 text-slate-100 border border-blue-500 rounded px-1 outline-none w-full text-center"
+            className="bg-[#202020] text-[#e5e7eb] border border-[#3b82f6] rounded px-1 outline-none w-full text-center"
           />
         ) : (
           <span 
@@ -100,13 +100,13 @@ export default function TableNode({ data }) {
         {data.fields.map((f, i) => (
           <div key={i} className="group relative flex justify-between items-center gap-6 px-4 py-1">
             
-            <div className="absolute left-0 flex flex-col opacity-0 group-hover:opacity-100 transition-opacity z-10 bg-slate-800">
+            <div className="absolute left-0 flex flex-col opacity-0 group-hover:opacity-100 transition-opacity z-10 bg-[#202020]">
               <button 
                 onClick={(e) => {
                   e.stopPropagation();
                   if (!parserError) moveColumn(data.name, f.name, 'up');
                 }}
-                className={`text-[10px] leading-none text-slate-500 hover:text-blue-400 p-0.5 ${parserError ? 'cursor-not-allowed opacity-50' : 'cursor-pointer'}`}
+                className={`text-[10px] leading-none text-[#9ca3af] hover:text-[#3b82f6] p-0.5 ${parserError ? 'cursor-not-allowed opacity-50' : 'cursor-pointer'}`}
                 title="Move Up"
                 disabled={!!parserError}
               >
@@ -117,7 +117,7 @@ export default function TableNode({ data }) {
                   e.stopPropagation();
                   if (!parserError) moveColumn(data.name, f.name, 'down');
                 }}
-                className={`text-[10px] leading-none text-slate-500 hover:text-blue-400 p-0.5 ${parserError ? 'cursor-not-allowed opacity-50' : 'cursor-pointer'}`}
+                className={`text-[10px] leading-none text-[#9ca3af] hover:text-[#3b82f6] p-0.5 ${parserError ? 'cursor-not-allowed opacity-50' : 'cursor-pointer'}`}
                 title="Move Down"
                 disabled={!!parserError}
               >
@@ -129,7 +129,7 @@ export default function TableNode({ data }) {
               type="target" 
               position={Position.Left} 
               id={`${f.name}-left`}
-              className="w-2 h-2 !bg-slate-400 border-none" 
+              className="w-2 h-2 !bg-[#9ca3af] border-none" 
               style={{ left: -4 }}
             />
             
@@ -144,7 +144,7 @@ export default function TableNode({ data }) {
                   if (e.key === 'Enter') handleSave(f.name);
                   if (e.key === 'Escape') setEditingColumn(null);
                 }}
-                className="bg-slate-700 text-slate-100 border border-blue-500 rounded px-1 outline-none w-24"
+                className="bg-[#202020] text-[#e5e7eb] border border-[#3b82f6] rounded px-1 outline-none w-24"
               />
             ) : (
               <span 
@@ -166,13 +166,13 @@ export default function TableNode({ data }) {
                   if (e.key === 'Enter') handleTypeSave(f.name, f.type.type_name);
                   if (e.key === 'Escape') setEditingType(null);
                 }}
-                className="bg-slate-700 text-slate-100 border border-emerald-500 rounded px-1 outline-none w-24 text-right"
+                className="bg-[#202020] text-[#e5e7eb] border border-emerald-500 rounded px-1 outline-none w-24 text-right"
               />
             ) : (
               <div className="flex items-center">
                 <span 
                   onDoubleClick={() => handleTypeDoubleClick(f.name, f.type.type_name)}
-                  className={`text-slate-400 ${parserError ? 'cursor-not-allowed text-red-300' : 'cursor-pointer hover:text-emerald-300'}`}
+                  className={`text-[#9ca3af] ${parserError ? 'cursor-not-allowed text-red-300' : 'cursor-pointer hover:text-emerald-300'}`}
                   title={parserError ? "Fix syntax error to edit" : "Double-click to edit type"}
                 >
                   {f.type.type_name}
@@ -196,7 +196,7 @@ export default function TableNode({ data }) {
               type="source" 
               position={Position.Right} 
               id={`${f.name}-right`}
-              className="w-2 h-2 !bg-slate-400 border-none" 
+              className="w-2 h-2 !bg-[#9ca3af] border-none" 
               style={{ right: -4 }}
             />
           </div>
@@ -208,7 +208,7 @@ export default function TableNode({ data }) {
           if (!parserError) addNewColumn(data.name);
           else alert('Perbaiki syntax error di editor terlebih dahulu!');
         }}
-        className={`text-xs text-center py-1.5 border-t border-slate-700 bg-slate-800 rounded-b-md transition-colors ${parserError ? 'cursor-not-allowed text-red-400' : 'cursor-pointer text-slate-500 hover:text-slate-300 hover:bg-slate-700'}`}
+        className={`text-xs text-center py-1.5 border-t border-[#383838] bg-[#202020] rounded-b-md transition-colors ${parserError ? 'cursor-not-allowed text-red-400' : 'cursor-pointer text-[#9ca3af] hover:text-[#e5e7eb] hover:bg-[#2e2e2e]'}`}
       >
         + Add Field
       </div>

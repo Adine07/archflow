@@ -48,10 +48,10 @@ export default function EnumModal() {
 
   return (
     <div className="fixed inset-0 z-[9999] bg-black/60 backdrop-blur-sm flex items-center justify-center p-4">
-      <div className="bg-slate-800 rounded-lg shadow-2xl border border-slate-700 w-full max-w-sm flex flex-col overflow-hidden">
+      <div className="bg-[#202020] rounded-lg shadow-2xl border border-[#383838] w-full max-w-sm flex flex-col overflow-hidden">
         
         {/* Header */}
-        <div className="bg-slate-900 px-4 py-3 border-b border-slate-700 flex justify-between items-center">
+        <div className="bg-[#1a1a1a] px-4 py-3 border-b border-[#383838] flex justify-between items-center">
           <div className="flex items-center gap-2">
             <span className="text-xs font-bold bg-emerald-500/20 text-emerald-400 px-1.5 py-0.5 rounded">E</span>
             {isEditingEnumName ? (
@@ -65,11 +65,11 @@ export default function EnumModal() {
                   if (e.key === 'Enter') handleEnumSave();
                   if (e.key === 'Escape') setIsEditingEnumName(false);
                 }}
-                className="bg-slate-700 text-slate-100 border border-emerald-500 rounded px-1.5 py-0.5 outline-none text-sm w-32"
+                className="bg-[#202020] text-[#e5e7eb] border border-emerald-500 rounded px-1.5 py-0.5 outline-none text-sm w-32"
               />
             ) : (
               <h3 
-                className={`text-slate-100 font-bold cursor-pointer hover:text-emerald-300 ${parserError ? 'opacity-50 pointer-events-none' : ''}`}
+                className={`text-[#e5e7eb] font-bold cursor-pointer hover:text-emerald-300 ${parserError ? 'opacity-50 pointer-events-none' : ''}`}
                 onDoubleClick={() => {
                   setEditEnumName(currentEnum.name);
                   setIsEditingEnumName(true);
@@ -82,7 +82,7 @@ export default function EnumModal() {
           </div>
           <button 
             onClick={closeEnumModal}
-            className="text-slate-400 hover:text-slate-200 transition-colors"
+            className="text-[#9ca3af] hover:text-[#d1d5db] transition-colors"
           >
             <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
               <path fillRule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clipRule="evenodd" />
@@ -93,7 +93,7 @@ export default function EnumModal() {
         {/* Values List */}
         <div className="p-4 flex flex-col gap-2 max-h-64 overflow-y-auto font-mono text-sm">
           {currentEnum.values.length === 0 && (
-            <div className="text-slate-500 text-xs text-center italic py-4">No options available</div>
+            <div className="text-[#9ca3af] text-xs text-center italic py-4">No options available</div>
           )}
           {currentEnum.values.map((v, i) => (
             <div key={i} className="flex justify-between items-center group">
@@ -108,10 +108,10 @@ export default function EnumModal() {
                     if (e.key === 'Enter') handleValueSave(v.name);
                     if (e.key === 'Escape') setEditingValue(null);
                   }}
-                  className="bg-slate-700 text-slate-100 border border-emerald-500 rounded px-2 py-1 outline-none w-full"
+                  className="bg-[#202020] text-[#e5e7eb] border border-emerald-500 rounded px-2 py-1 outline-none w-full"
                 />
               ) : (
-                <div className="flex justify-between items-center w-full px-2 py-1 rounded hover:bg-slate-700/50">
+                <div className="flex justify-between items-center w-full px-2 py-1 rounded hover:bg-[#2e2e2e]">
                   <span 
                     onDoubleClick={() => {
                       if (!parserError) {
@@ -119,14 +119,14 @@ export default function EnumModal() {
                         setEditValue(v.name);
                       }
                     }}
-                    className={`text-slate-300 ${parserError ? 'cursor-not-allowed opacity-50' : 'cursor-pointer hover:text-emerald-300'}`}
+                    className={`text-[#e5e7eb] ${parserError ? 'cursor-not-allowed opacity-50' : 'cursor-pointer hover:text-emerald-300'}`}
                     title="Double click to edit option"
                   >
                     {v.name}
                   </span>
                   <button 
                     onClick={() => handleDeleteValue(v.name)}
-                    className="text-slate-500 hover:text-red-400 opacity-0 group-hover:opacity-100 transition-opacity"
+                    className="text-[#9ca3af] hover:text-red-400 opacity-0 group-hover:opacity-100 transition-opacity"
                     title="Delete option"
                   >
                     <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" viewBox="0 0 20 20" fill="currentColor">
@@ -140,7 +140,7 @@ export default function EnumModal() {
         </div>
 
         {/* Footer / Add Button */}
-        <div className="p-3 border-t border-slate-700 bg-slate-900/50">
+        <div className="p-3 border-t border-[#383838] bg-[#1a1a1a]/50">
           <button
             onClick={() => {
               if (!parserError) addEnumValue(currentEnum.name);

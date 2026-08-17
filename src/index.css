@@ -15,3 +15,19 @@ body,
 .error-line-highlight {
   background-color: rgba(239, 68, 68, 0.2) !important;
 }
+
+/* Custom Webkit Scrollbar */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+::-webkit-scrollbar-track {
+  background: #141414; /* Business Dark Track */
+}
+::-webkit-scrollbar-thumb {
+  background: #383838; /* Metallic Dark Gray */
+  border-radius: 4px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: #525252; /* Lighter Metallic Gray */
+}
