@@ -12,6 +12,8 @@
     "@dbml/core": "^3.4.0",
     "@monaco-editor/react": "^4.7.0",
     "@xyflow/react": "^12.4.4",
+    "dagre": "^0.8.5",
+    "html-to-image": "^1.11.11",
     "react": "^18.3.1",
     "react-dom": "^18.3.1",
     "react-resizable-panels": "^2.1.7",

@@ -2,6 +2,7 @@ import { create } from 'zustand';
 import { applyNodeChanges, applyEdgeChanges } from '@xyflow/react';
 import { Parser } from '@dbml/core';
 import React from 'react';
+import { getLayoutedElements } from './layoutUtils.js';
 
 const defaultDbmlString = `// Contoh DBML dengan relasi 1:N
 Table users {
@@ -24,6 +25,13 @@ export const useDiagramStore = create((set, get) => ({
   dbmlString: defaultDbmlString,
   nodes: [],
   edges: [],
+  parserError: null,
+  errorLocation: null,
+  parsedEnums: [],
+  activeEnumModal: null,
+
+  openEnumModal: (enumName) => set({ activeEnumModal: enumName }),
+  closeEnumModal: () => set({ activeEnumModal: null }),
   
   onNodesChange: (changes) => {
     set({
@@ -37,9 +45,50 @@ export const useDiagramStore = create((set, get) => ({
     });
   },
   
-  setDbmlString: (code) => {
+  applyAutoLayout: () => {
+    const { nodes, edges } = get();
+    const { nodes: layoutedNodes, edges: layoutedEdges } = getLayoutedElements(nodes, edges, 'TB');
+    set({ nodes: [...layoutedNodes], edges: [...layoutedEdges] });
+  },
+  
+  setDbmlString: (code, options) => {
     set({ dbmlString: code });
-    get().parseDbml();
+    get().parseDbml(options);
+  },
+
+  addNewTable: () => {
+    const code = get().dbmlString;
+    const newTableName = `new_table_${Date.now()}`;
+    const newTableString = `\nTable ${newTableName} {\n  id integer [primary key]\n}\n`;
+    
+    get().setDbmlString(code + newTableString);
+  },
+
+  addNewEnum: () => {
+    const code = get().dbmlString;
+    const newEnumName = `new_enum_${Date.now()}`;
+    const newEnumString = `\n\nenum ${newEnumName} {\n  opsi1\n  opsi2\n}\n`;
+    
+    get().setDbmlString(code + newEnumString);
+    set({ activeEnumModal: newEnumName });
+  },
+  
+  onConnectRelation: (connection) => {
+    const { dbmlString: code, parserError } = get();
+    
+    if (parserError) {
+      alert('Perbaiki syntax error di editor terlebih dahulu!');
+      return;
+    }
+    
+    // connection.sourceHandle / targetHandle can have '-left' or '-right' suffix.
+    const sourceCol = connection.sourceHandle?.replace(/-right$|-left$/, '');
+    const targetCol = connection.targetHandle?.replace(/-right$|-left$/, '');
+    
+    if (!sourceCol || !targetCol) return;
+    
+    const newRefString = `\nRef: ${connection.source}.${sourceCol} > ${connection.target}.${targetCol}\n`;
+    get().setDbmlString(code + newRefString);
   },
   
   updateColumnName: (tableName, oldColName, newColName) => {
@@ -86,8 +135,276 @@ export const useDiagramStore = create((set, get) => ({
       get().setDbmlString(newCode);
     }
   },
+
+  updateColumnType: (tableName, columnName, newType) => {
+    const code = get().dbmlString;
+    const lines = code.split('\n');
+    let inTargetTable = false;
+    let modified = false;
+
+    for (let i = 0; i < lines.length; i++) {
+      let line = lines[i];
+
+      if (line.match(new RegExp(`^\\s*Table\\s+${tableName}\\s*{`, 'i'))) {
+        inTargetTable = true;
+        continue;
+      }
+      
+      if (inTargetTable) {
+        if (line.match(/^\s*}/)) {
+          inTargetTable = false;
+          continue;
+        }
+        
+        // Find line starting with the column name
+        const colRegex = new RegExp(`^(\\s*${columnName}\\s+)\\S+(.*)`);
+        if (colRegex.test(line)) {
+          lines[i] = line.replace(colRegex, `$1${newType}$2`);
+          modified = true;
+        }
+      }
+    }
+    
+    if (modified) {
+      const newCode = lines.join('\n');
+      get().setDbmlString(newCode);
+    }
+  },
+
+  addNewColumn: (tableName) => {
+    const code = get().dbmlString;
+    const lines = code.split('\n');
+    let inTargetTable = false;
+    let modified = false;
+
+    for (let i = 0; i < lines.length; i++) {
+      let line = lines[i];
+
+      if (line.match(new RegExp(`^\\s*Table\\s+${tableName}\\s*{`, 'i'))) {
+        inTargetTable = true;
+        continue;
+      }
+      
+      if (inTargetTable) {
+        if (line.match(/^\s*}/)) {
+          // Found the end of the table. Insert new field right before it.
+          lines.splice(i, 0, `  new_field varchar`);
+          modified = true;
+          break; // Done
+        }
+      }
+    }
+
+    if (modified) {
+      const newCode = lines.join('\n');
+      get().setDbmlString(newCode);
+    }
+  },
+
+  moveColumn: (tableName, columnName, direction) => {
+    const code = get().dbmlString;
+    
+    const tableRegex = new RegExp(`(^\\s*Table\\s+${tableName}\\s*{)([\\s\\S]*?)(^\\s*})`, 'im');
+    const match = code.match(tableRegex);
+    if (!match) return;
+
+    const blockStart = match[1];
+    const blockContent = match[2];
+    const blockEnd = match[3];
+
+    const lines = blockContent.split('\n');
+    
+    let colIndex = -1;
+    for (let i = 0; i < lines.length; i++) {
+      if (lines[i].match(new RegExp(`^\\s*${columnName}\\b`))) {
+        colIndex = i;
+        break;
+      }
+    }
+
+    if (colIndex === -1) return;
+
+    let targetIndex = -1;
+    if (direction === 'up') {
+      for (let i = colIndex - 1; i >= 0; i--) {
+        if (lines[i].trim().length > 0) {
+          targetIndex = i;
+          break;
+        }
+      }
+    } else if (direction === 'down') {
+      for (let i = colIndex + 1; i < lines.length; i++) {
+        if (lines[i].trim().length > 0) {
+          targetIndex = i;
+          break;
+        }
+      }
+    }
+
+    if (targetIndex !== -1) {
+      const temp = lines[colIndex];
+      lines[colIndex] = lines[targetIndex];
+      lines[targetIndex] = temp;
+
+      const newBlockContent = lines.join('\n');
+      const newCode = code.replace(tableRegex, `${blockStart}${newBlockContent}${blockEnd}`);
+      get().setDbmlString(newCode);
+    }
+  },
   
-  parseDbml: () => {
+  updateTableName: (oldName, newName) => {
+    const code = get().dbmlString;
+    let newCode = code;
+
+    const oldNode = get().nodes.find(n => n.id === oldName);
+    const savedPosition = oldNode ? { ...oldNode.position } : null;
+
+    // 1. Replace Table Declaration
+    const tableRegex = new RegExp(`(^\\s*Table\\s+)${oldName}(\\s*{)`, 'gm');
+    newCode = newCode.replace(tableRegex, `$1${newName}$2`);
+
+    // 2. Replace References (e.g. tableName.columnName)
+    const refRegex = new RegExp(`\\b${oldName}\\.`, 'g');
+    newCode = newCode.replace(refRegex, `${newName}.`);
+
+    if (newCode !== code) {
+      get().setDbmlString(newCode, { renamedTable: { newName, position: savedPosition } });
+    }
+  },
+
+  updateEnumName: (oldName, newName) => {
+    const code = get().dbmlString;
+    let newCode = code;
+
+    const enumRegex = new RegExp(`(^\\s*Enum\\s+)${oldName}(\\s*{)`, 'gmi');
+    newCode = newCode.replace(enumRegex, `$1${newName}$2`);
+
+    const lines = newCode.split('\n');
+    let inTable = false;
+    for (let i = 0; i < lines.length; i++) {
+      let line = lines[i];
+      if (line.match(/^\s*Table\s+/i)) {
+        inTable = true;
+        continue;
+      }
+      if (inTable) {
+        if (line.match(/^\s*}/)) {
+          inTable = false;
+          continue;
+        }
+        if (line.match(new RegExp(`\\b${oldName}\\b`))) {
+           const typeRegex = new RegExp(`(\\s)${oldName}(\\s*(?:\\[.*?\\])?\\s*)$`);
+           if (typeRegex.test(line)) {
+             lines[i] = line.replace(typeRegex, `$1${newName}$2`);
+           }
+        }
+      }
+    }
+    
+    newCode = lines.join('\n');
+
+    if (newCode !== code) {
+      get().setDbmlString(newCode);
+      set({ activeEnumModal: newName });
+    }
+  },
+
+  updateEnumValue: (enumName, oldVal, newVal) => {
+    const code = get().dbmlString;
+    const lines = code.split('\n');
+    let inTargetEnum = false;
+    let modified = false;
+
+    for (let i = 0; i < lines.length; i++) {
+      let line = lines[i];
+
+      if (line.match(new RegExp(`^\\s*Enum\\s+${enumName}\\s*{`, 'i'))) {
+        inTargetEnum = true;
+        continue;
+      }
+      
+      if (inTargetEnum) {
+        if (line.match(/^\s*}/)) {
+          inTargetEnum = false;
+          continue;
+        }
+        
+        const valRegex = new RegExp(`^(\\s*)${oldVal}(\\s*(?:\\[.*?\\])?\\s*)$`);
+        if (valRegex.test(line)) {
+          lines[i] = line.replace(valRegex, `$1${newVal}$2`);
+          modified = true;
+        }
+      }
+    }
+    
+    if (modified) {
+      get().setDbmlString(lines.join('\n'));
+    }
+  },
+
+  addEnumValue: (enumName) => {
+    const code = get().dbmlString;
+    const lines = code.split('\n');
+    let inTargetEnum = false;
+    let modified = false;
+
+    for (let i = 0; i < lines.length; i++) {
+      let line = lines[i];
+
+      if (line.match(new RegExp(`^\\s*Enum\\s+${enumName}\\s*{`, 'i'))) {
+        inTargetEnum = true;
+        continue;
+      }
+      
+      if (inTargetEnum) {
+        if (line.match(/^\s*}/)) {
+          lines.splice(i, 0, `  new_value`);
+          modified = true;
+          break;
+        }
+      }
+    }
+
+    if (modified) {
+      get().setDbmlString(lines.join('\n'));
+    }
+  },
+
+  deleteEnumValue: (enumName, valName) => {
+    const code = get().dbmlString;
+    const lines = code.split('\n');
+    let inTargetEnum = false;
+    let modified = false;
+
+    for (let i = 0; i < lines.length; i++) {
+      let line = lines[i];
+
+      if (line.match(new RegExp(`^\\s*Enum\\s+${enumName}\\s*{`, 'i'))) {
+        inTargetEnum = true;
+        continue;
+      }
+      
+      if (inTargetEnum) {
+        if (line.match(/^\s*}/)) {
+          inTargetEnum = false;
+          continue;
+        }
+        
+        const valRegex = new RegExp(`^(\\s*)${valName}(\\s*(?:\\[.*?\\])?\\s*)$`);
+        if (valRegex.test(line)) {
+          lines.splice(i, 1);
+          modified = true;
+          break;
+        }
+      }
+    }
+
+    if (modified) {
+      get().setDbmlString(lines.join('\n'));
+    }
+  },
+
+  parseDbml: (options = {}) => {
     const code = get().dbmlString;
     if (!code) return;
 
@@ -106,8 +423,12 @@ export const useDiagramStore = create((set, get) => ({
         schema.tables.forEach(table => {
           
           const existingNode = currentNodes.find(n => n.id === table.name);
-          // Buat salinan immutable untuk position
-          const position = existingNode ? { ...existingNode.position } : { x: xOffset, y: yOffset };
+          let position = existingNode ? { ...existingNode.position } : null;
+          
+          if (!position && options.renamedTable && options.renamedTable.newName === table.name) {
+             position = options.renamedTable.position;
+          }
+          if (!position) position = { x: xOffset, y: yOffset };
           
           newNodes.push({
             id: table.name,
@@ -150,11 +471,31 @@ export const useDiagramStore = create((set, get) => ({
         });
       });
 
-      set({ nodes: newNodes, edges: newEdges });
+      // Determine parsedEnums to pass to UI
+      const parsedEnums = database.schemas.length > 0 ? [...database.schemas[0].enums] : [];
+
+      set({ nodes: newNodes, edges: newEdges, parserError: null, errorLocation: null, parsedEnums });
     } catch (err) {
-      console.error("Failed to parse DBML:", err.message);
-      // If parsing fails, we just don't update the nodes/edges,
-      // but keep the state.dbmlString updated.
+      let errorMessage = "Syntax Error: Periksa kembali penulisan kode DBML Anda.";
+      let errLoc = null;
+      
+      if (err?.diags?.length > 0) {
+        const diag = err.diags[0];
+        errorMessage = diag.message || errorMessage;
+        if (diag.location) {
+          errLoc = {
+            startLineNumber: diag.location.start.line,
+            startColumn: diag.location.start.column,
+            endLineNumber: diag.location.end.line,
+            endColumn: diag.location.end.column,
+          };
+        }
+      } else if (err?.message) {
+        errorMessage = err.message;
+      }
+      
+      console.error("Parser Error:", err);
+      set({ parserError: errorMessage, errorLocation: errLoc });
     }
   }
 }));

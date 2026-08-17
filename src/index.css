@@ -11,3 +11,7 @@ body,
   padding: 0;
   overflow: hidden;
 }
+
+.error-line-highlight {
+  background-color: rgba(239, 68, 68, 0.2) !important;
+}
