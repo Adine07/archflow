@@ -90,8 +90,10 @@ export default function App() {
   };
 
   return (
-    <div className="h-screen w-screen overflow-hidden bg-slate-900 text-slate-100 relative">
-      <PanelGroup direction="horizontal">
+    <div className="h-screen w-screen overflow-hidden bg-slate-900 text-slate-100 flex flex-col relative">
+      <TopBar />
+      <div className="flex-1 overflow-hidden relative">
+        <PanelGroup direction="horizontal">
         
         {/* Panel Kiri: Monaco Editor */}
         <Panel defaultSize={50} minSize={20} className="flex flex-col bg-[#1e1e1e] relative">
@@ -144,7 +146,6 @@ export default function App() {
             <span className="text-[11px] text-slate-500">Canvas Ready</span>
           </div>
           <div className="flex-1 w-full relative">
-            <TopBar />
             <ReactFlow
               nodes={nodes}
               edges={edges}
@@ -163,7 +164,8 @@ export default function App() {
           </div>
         </Panel>
 
-      </PanelGroup>
+        </PanelGroup>
+      </div>
       
       <EnumModal />
     </div>

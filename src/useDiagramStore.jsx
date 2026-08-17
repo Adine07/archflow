@@ -1,6 +1,6 @@
 import { create } from 'zustand';
 import { applyNodeChanges, applyEdgeChanges } from '@xyflow/react';
-import { Parser } from '@dbml/core';
+import { Parser, exporter } from '@dbml/core';
 import React from 'react';
 import { getLayoutedElements } from './layoutUtils.js';
 
@@ -62,6 +62,61 @@ export const useDiagramStore = create((set, get) => ({
     const newTableString = `\nTable ${newTableName} {\n  id integer [primary key]\n}\n`;
     
     get().setDbmlString(code + newTableString);
+  },
+
+  exportProject: () => {
+    const { dbmlString, nodes } = get();
+    const nodePositions = nodes.map(n => ({ id: n.id, position: n.position }));
+    
+    const projectData = {
+      dbmlString,
+      nodePositions,
+      version: '1.0'
+    };
+    
+    const blob = new Blob([JSON.stringify(projectData, null, 2)], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.download = 'project.dbmlproj';
+    link.href = url;
+    link.click();
+    URL.revokeObjectURL(url);
+  },
+
+  importProject: (fileContent) => {
+    try {
+      const projectData = JSON.parse(fileContent);
+      if (projectData && projectData.dbmlString !== undefined) {
+        const posMap = {};
+        if (projectData.nodePositions) {
+          projectData.nodePositions.forEach(n => {
+            posMap[n.id] = n.position;
+          });
+        }
+        
+        get().setDbmlString(projectData.dbmlString, { importedPositions: posMap });
+      } else {
+        alert("Invalid project file format");
+      }
+    } catch (err) {
+      alert("Error parsing project file: " + err.message);
+    }
+  },
+
+  exportSQL: () => {
+    try {
+      const { dbmlString } = get();
+      const sql = exporter.export(dbmlString, 'mysql');
+      const blob = new Blob([sql], { type: 'application/sql' });
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.download = 'schema.sql';
+      link.href = url;
+      link.click();
+      URL.revokeObjectURL(url);
+    } catch (err) {
+      alert("Failed to export SQL: " + err.message);
+    }
   },
 
   addNewEnum: () => {
@@ -427,6 +482,9 @@ export const useDiagramStore = create((set, get) => ({
           
           if (!position && options.renamedTable && options.renamedTable.newName === table.name) {
              position = options.renamedTable.position;
+          }
+          if (options.importedPositions && options.importedPositions[table.name]) {
+            position = options.importedPositions[table.name];
           }
           if (!position) position = { x: xOffset, y: yOffset };
           
